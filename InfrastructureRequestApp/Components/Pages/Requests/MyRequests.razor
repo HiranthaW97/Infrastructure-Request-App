@@ -1,0 +1,46 @@
+﻿@page "/requests"
+@using InfrastructureRequestApp.Data.Services.Interfaces
+@using Microsoft.AspNetCore.Components.Authorization
+@inject IRequestService RequestsSvc
+@inject AuthenticationStateProvider AuthProvider
+@inject NavigationManager Nav
+
+
+ <AuthorizeView>
+    <Authorized Context="auth">
+    <RadzenCard>
+      <div class="d-flex justify-content-between align-items-center mb-2">
+        <h3>My Requests</h3>
+        <RadzenButton Icon="add" Text="Add New Request" Click='@(() => Nav.NavigateTo("/requests/new"))' ButtonStyle="ButtonStyle.Primary" />
+      </div>
+      <RadzenDataGrid @ref="grid" Data="data" TItem="Request" AllowSorting AllowPaging PageSize="10">
+        <Columns>
+          <RadzenDataGridColumn TItem="Request" Property="RequestType" Title="Type" />
+          <RadzenDataGridColumn TItem="Request" Property="Description" Title="Description" />
+          <RadzenDataGridColumn TItem="Request" Property="Urgency" Title="Urgency" />
+          <RadzenDataGridColumn TItem="Request" Property="Note" Title="Note" />
+          <RadzenDataGridColumn TItem="Request" Property="Status" Title="Status" />
+          <RadzenDataGridColumn TItem="Request" Property="CreatedDate" Title="Created" FormatString="{0:yyyy-MM-dd HH:mm}" />
+        </Columns>
+      </RadzenDataGrid>
+    </RadzenCard>
+  </Authorized>
+  <NotAuthorized>
+    <RadzenAlert Severity="AlertSeverity.Warning" Text="Please login to view your requests." />
+  </NotAuthorized>
+ </AuthorizeView>
+
+@code {
+    RadzenDataGrid<Request>? grid;
+    List<Request> data = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        var state = await AuthProvider.GetAuthenticationStateAsync();
+        var id = state.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (id is not null)
+        {
+            data = await RequestsSvc.GetMineAsync(Guid.Parse(id));
+        }
+    }
+}

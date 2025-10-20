@@ -1,0 +1,83 @@
+﻿@page "/admin/users"
+@using InfrastructureRequestApp.Data.Services.Interfaces
+@using System.ComponentModel.DataAnnotations
+@attribute [Authorize(Roles = Roles.Admin)]
+@inject IUserService Users
+@inject NotificationService Notify
+
+
+<RadzenCard>
+    <h3>Manage Users</h3>
+    <EditForm Model="model" OnValidSubmit="Create">
+        <DataAnnotationsValidator />
+        <div class="grid" style="grid-template-columns: 1fr 1fr 1fr 1fr; gap: 8px;">
+            <RadzenTextBox @bind-Value="model.FullName" Placeholder="Full name" />
+            <RadzenTextBox @bind-Value="model.UserName" Placeholder="Username" />
+            <RadzenDropDown @bind-Value="model.UserType" Data="roles" />
+            <RadzenPassword @bind-Value="model.Password" Placeholder="Temporary password" />
+        </div>
+        <RadzenButton class="mt-2" Text="Add User" ButtonStyle="ButtonStyle.Primary" Type="Submit" />
+    </EditForm>
+    <RadzenDataGrid Data="users" TItem="User" class="mt-3" AllowSorting
+                    AllowPaging PageSize="10">
+        <Columns>
+            <RadzenDataGridColumn TItem="User" Property="UserId" Title="#" />
+            <RadzenDataGridColumn TItem="User" Property="FullName" Title="Full Name" />
+            <RadzenDataGridColumn TItem="User" Property="UserName" Title="Username" />
+            <RadzenDataGridColumn TItem="User" Property="UserType" Title="Role" />
+            <RadzenDataGridColumn TItem="User" Property="IsActive" Title="Active" />
+        </Columns>
+    </RadzenDataGrid>
+</RadzenCard>
+
+
+@code {
+
+    class CreateUserVM
+    {
+        [Required(ErrorMessage = "Full Name is required")]
+        public string FullName { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Username is required")]
+        public string UserName { get; set; } = string.Empty;
+
+        public string UserType { get; set; } = Roles.Standard;
+        public string Password { get; set; } = "User@1234";
+    }
+
+    CreateUserVM model = new();
+    string[] roles = new[] { Roles.Standard, Roles.Admin };
+    List<User> users = new();
+
+    protected override async Task OnInitializedAsync()
+    {
+        users = await Users.GetAllAsync();
+    }
+
+    async Task Create()
+    {
+        // Trim and validate required fields
+        if (string.IsNullOrWhiteSpace(model.FullName) || string.IsNullOrWhiteSpace(model.UserName))
+        {
+            Notify.Notify(NotificationSeverity.Warning,
+                "Missing Information",
+                "Please enter both Full Name and Username before saving.");
+            return;
+        }
+
+        var u = new User
+        {
+            FullName = model.FullName.Trim(),
+            UserName = model.UserName.Trim(),
+            UserType = model.UserType,
+            IsActive = true
+        };
+
+        await Users.CreateAsync(u, model.Password);
+        Notify.Notify(NotificationSeverity.Success, "User added", $"{model.FullName} created.");
+
+        users = await Users.GetAllAsync();
+        model = new(); // reset form
+    }
+
+}

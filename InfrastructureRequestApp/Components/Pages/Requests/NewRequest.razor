@@ -1,0 +1,62 @@
+﻿@page "/requests/new"
+@using InfrastructureRequestApp.Data.Services.Interfaces
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.AspNetCore.Components.Forms
+@inject IRequestService RequestsSvc
+@inject AuthenticationStateProvider AuthProvider
+@inject NavigationManager Nav
+@inject NotificationService Notify
+
+
+<AuthorizeView>
+    <Authorized Context="auth">
+        <EditForm Model="model" OnValidSubmit="Submit">
+            <DataAnnotationsValidator />
+            <RadzenCard Style="max-width:720px">
+                <h3>Submit New Request</h3>
+                <div class="mb-2">
+                    <label>Request Type</label>
+                    <RadzenDropDown @bind-Value="model.RequestType" Data="types" Style="width:100%" />
+                </div>
+                <div class="mb-2">
+                    <label>Description</label>
+                    <RadzenTextArea @bind-Value="model.Description" Style="width:100%" Rows="4" />
+                </div>
+                <div class="mb-2">
+                    <label>Urgency</label>
+                    <RadzenDropDown @bind-Value="model.Urgency" Data="urgencies" Style="width:100%" />
+                </div>
+                <div class="mb-2">
+                    <label>Note (optional)</label>
+                    <RadzenTextArea @bind-Value="model.Note" Style="width:100%" Rows="2" />
+                </div>
+                <RadzenButton Text="Submit" ButtonStyle="ButtonStyle.Primary" Type="Submit" />
+            </RadzenCard>
+        </EditForm>
+    </Authorized>
+    <NotAuthorized>
+        <RadzenAlert Severity="AlertSeverity.Warning" Text="Please login to submit a request." />
+    </NotAuthorized>
+</AuthorizeView>
+
+@code {
+    Request model = new();
+    string[] types = new[] { "Hardware", "Software", "Network", "Other" };
+    string[] urgencies = new[] { "Low", "Medium", "High" };
+
+    private async Task Submit()
+    {
+        var state = await AuthProvider.GetAuthenticationStateAsync();
+        var id = state.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+
+        if (id is null)
+        {
+             return;
+        }
+
+        model.CreatedBy = Guid.Parse(id);
+        await RequestsSvc.CreateAsync(model);
+        Notify.Notify(NotificationSeverity.Success, "Submitted", "Your request was created.");
+        Nav.NavigateTo("/requests");
+  }
+}

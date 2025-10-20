@@ -1,0 +1,20 @@
+﻿.page {
+    display: grid;
+    grid-template-columns: 260px 1fr;
+    min-height: 100vh;
+}
+
+.sidebar {
+    background: #0b1736;
+    color: #fff;
+    padding: 8px;
+}
+
+.top-row {
+    border-bottom: 1px solid #eee;
+    margin-bottom: 8px;
+}
+
+.content {
+    padding: 16px;
+}

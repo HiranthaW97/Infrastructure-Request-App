@@ -1,0 +1,67 @@
+﻿@page "/login"
+@attribute [AllowAnonymous]
+@using InfrastructureRequestApp.Data.Services.Interfaces
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.AspNetCore.Components.Forms
+@inject IAuthService Auth
+@inject IUserService Users
+@inject NavigationManager Nav
+@inject AuthenticationStateProvider AuthProvider
+@inject NotificationService Notify
+
+<RadzenTemplateForm TItem="LoginModel" Data="@model" Submit="HandleLogin">
+    <RadzenCard Style="max-width:420px; margin:auto; margin-top:80px;">
+        <h3 class="text-center mb-4">Sign in</h3>
+
+        <RadzenTextBox @bind-Value="model.UserName"
+                       Name="UserName"
+                       Placeholder="Username"
+                       Style="width:100%" />
+        <ValidationMessage For="@(() => model.UserName)" />
+
+        <RadzenPassword @bind-Value="model.Password"
+                        Name="Password"
+                        Placeholder="Password"
+                        Style="width:100%; margin-top:10px;" />
+        <ValidationMessage For="@(() => model.Password)" />
+
+        <div class="mt-3 text-center">
+            <RadzenButton Text="Login"
+                          ButtonStyle="ButtonStyle.Primary"
+                          Type="Submit"
+                          Style="width:100%;" />
+        </div>
+    </RadzenCard>
+</RadzenTemplateForm>
+
+@code {
+    private LoginModel model = new();
+
+    class LoginModel
+    {
+        public string UserName { get; set; } = string.Empty; 
+        public string Password { get; set; } = string.Empty;
+    }
+
+    private async Task HandleLogin()
+    {
+        var user = await Auth.ValidateUserAsync(model.UserName, model.Password);
+        if (user is null)
+        {
+            Notify.Notify(NotificationSeverity.Error, "Login failed", "Invalid credentials or inactive user.");
+            return;
+        }
+
+        await (AuthProvider as CustomAuthStateProvider)!.SignInAsync(user);
+
+        if (user.UserType == Roles.Admin)
+        {
+            Nav.NavigateTo("/admin/dashboard");
+        }
+        else
+        {
+            Nav.NavigateTo("/");
+        }
+
+    }
+}

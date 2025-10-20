@@ -1,0 +1,35 @@
+﻿@using Microsoft.AspNetCore.Components.Authorization
+@inherits LayoutComponentBase
+@inject NavigationManager Nav
+@inject AuthenticationStateProvider AuthProvider
+@inject DialogService DialogService
+@inject NotificationService NotificationService
+
+<div class="page">
+  <div class="sidebar">
+        <RadzenPanelMenu>
+            <RadzenPanelMenuItem Text="Dashboard" Path="/" Icon="home" />
+            <RadzenPanelMenuItem Text="My Requests" Path="/requests" Icon="list" />
+            <RadzenPanelMenuItem Text="New Request" Path="/requests/new" Icon="add" />
+            <RadzenPanelMenuItem Text="Change Password" Path="/change-password"
+                                 Icon="lock" />
+            <AuthorizeView Roles="Admin">
+                <RadzenPanelMenuItem Text="Admin" Icon="manage_accounts">
+                    <RadzenPanelMenuItem Text="All Requests" Path="/admin"
+                                         Icon="dashboard" />
+                    <RadzenPanelMenuItem Text="Manage Users" Path="/admin/users"
+                                         Icon="group" />
+                </RadzenPanelMenuItem>
+            </AuthorizeView>
+            <RadzenPanelMenuItem Text="Logout" Path="/logout" Icon="logout" />
+        </RadzenPanelMenu>
+    </div>
+    <main>
+        <div class="top-row px-4">
+            <h3>Infrastructure Request App</h3>
+        </div>
+        <div class="content px-4">
+            @Body
+        </div>
+    </main>
+</div>

@@ -1,0 +1,29 @@
+﻿@page "/admin"
+@using InfrastructureRequestApp.Data.Services.Interfaces
+@attribute [Authorize(Roles = Roles.Admin)]
+@inject IRequestService RequestsSvc
+@inject NavigationManager Nav
+
+<RadzenCard>
+    <h3>All Requests</h3>
+    <RadzenDataGrid Data="data" TItem="Request" AllowFiltering="true" AllowSorting="true" AllowPaging="true" PageSize="12">
+        <Columns>
+            <RadzenDataGridColumn TItem="Request" Property="RequestId" Title="#" Width="70px" />
+            <RadzenDataGridColumn TItem="Request" Property="RequestType" Title="Type" />
+            <RadzenDataGridColumn TItem="Request" Property="Description" Title="Description" />
+            <RadzenDataGridColumn TItem="Request" Property="Urgency" Title="Urgency" />
+            <RadzenDataGridColumn TItem="Request" Property="Status" Title="Status" />
+            <RadzenDataGridColumn TItem="Request" Property="CreatedDate" Title="Created" FormatString="{0:yyyy-MM-dd HH:mm}" />
+            <RadzenDataGridColumn TItem="Request" Title="Actions">
+                <Template Context="r">
+                    <RadzenButton Text="Open" Size="ButtonSize.Small" Click="@(() => Nav.NavigateTo($"/admin/requests/{r.RequestId.ToString()}"))" />
+                </Template>
+            </RadzenDataGridColumn>
+        </Columns>
+    </RadzenDataGrid>
+</RadzenCard>
+
+@code {
+    List<Request> data = new();
+    protected override async Task OnInitializedAsync() => data = await RequestsSvc.GetAllAsync();
+}
