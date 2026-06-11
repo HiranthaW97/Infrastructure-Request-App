@@ -1,38 +1,73 @@
-﻿@page "/requests/new"
+@page "/requests/new"
 @using InfrastructureRequestApp.Data.Services.Interfaces
 @using Microsoft.AspNetCore.Components.Authorization
-@using Microsoft.AspNetCore.Components.Forms
 @inject IRequestService RequestsSvc
 @inject AuthenticationStateProvider AuthProvider
 @inject NavigationManager Nav
 @inject NotificationService Notify
 
+<div class="page-header">
+    <h2 class="page-title">Submit New Request</h2>
+</div>
 
 <AuthorizeView>
     <Authorized Context="auth">
-        <EditForm Model="model" OnValidSubmit="Submit">
-            <DataAnnotationsValidator />
-            <RadzenCard Style="max-width:720px">
-                <h3>Submit New Request</h3>
-                <div class="mb-2">
-                    <label>Request Type</label>
-                    <RadzenDropDown @bind-Value="model.RequestType" Data="types" Style="width:100%" />
+        <RadzenCard class="form-card">
+            <div class="form-card-head">
+                <div class="form-icon form-icon-add"><i class="material-icons">add_circle</i></div>
+                <div>
+                    <h3 class="form-card-title">Report an infrastructure issue</h3>
+                    <p class="form-card-sub">Give the team enough detail to act on your request quickly.</p>
                 </div>
-                <div class="mb-2">
-                    <label>Description</label>
-                    <RadzenTextArea @bind-Value="model.Description" Style="width:100%" Rows="4" />
-                </div>
-                <div class="mb-2">
-                    <label>Urgency</label>
-                    <RadzenDropDown @bind-Value="model.Urgency" Data="urgencies" Style="width:100%" />
-                </div>
-                <div class="mb-2">
-                    <label>Note (optional)</label>
-                    <RadzenTextArea @bind-Value="model.Note" Style="width:100%" Rows="2" />
-                </div>
-                <RadzenButton Text="Submit" ButtonStyle="ButtonStyle.Primary" Type="Submit" />
-            </RadzenCard>
-        </EditForm>
+            </div>
+
+            <RadzenTemplateForm TItem="Request" Data="model" Submit="Submit">
+                <RadzenStack Gap="1.1rem" class="mt-3">
+                    <RadzenRow Gap="1rem">
+                        <RadzenColumn Size="12" SizeMD="6">
+                            <RadzenFormField Text="Request Type" Variant="Variant.Outlined" Style="width:100%">
+                                <ChildContent>
+                                    <RadzenDropDown @bind-Value="model.RequestType" Data="types" Name="RequestType" />
+                                </ChildContent>
+                                <Helper>
+                                    <RadzenRequiredValidator Component="RequestType" Text="Please choose a type" />
+                                </Helper>
+                            </RadzenFormField>
+                        </RadzenColumn>
+                        <RadzenColumn Size="12" SizeMD="6">
+                            <RadzenFormField Text="Urgency" Variant="Variant.Outlined" Style="width:100%">
+                                <ChildContent>
+                                    <RadzenDropDown @bind-Value="model.Urgency" Data="urgencies" Name="Urgency" />
+                                </ChildContent>
+                                <Helper>
+                                    <RadzenRequiredValidator Component="Urgency" Text="Please choose urgency" />
+                                </Helper>
+                            </RadzenFormField>
+                        </RadzenColumn>
+                    </RadzenRow>
+
+                    <RadzenFormField Text="Description" Variant="Variant.Outlined" Style="width:100%">
+                        <ChildContent>
+                            <RadzenTextArea @bind-Value="model.Description" Name="Description" Rows="4" />
+                        </ChildContent>
+                        <Helper>
+                            <RadzenRequiredValidator Component="Description" Text="Please describe the issue" />
+                        </Helper>
+                    </RadzenFormField>
+
+                    <RadzenFormField Text="Note (optional)" Variant="Variant.Outlined" Style="width:100%">
+                        <RadzenTextArea @bind-Value="model.Note" Rows="2" />
+                    </RadzenFormField>
+
+                    <RadzenStack Orientation="Orientation.Horizontal" Gap="0.5rem">
+                        <RadzenButton Text="Submit Request" Icon="send" ButtonStyle="ButtonStyle.Primary"
+                                      ButtonType="ButtonType.Submit" />
+                        <RadzenButton Text="Cancel" ButtonStyle="ButtonStyle.Light" Variant="Variant.Flat"
+                                      Click='@(() => Nav.NavigateTo("/requests"))' />
+                    </RadzenStack>
+                </RadzenStack>
+            </RadzenTemplateForm>
+        </RadzenCard>
     </Authorized>
     <NotAuthorized>
         <RadzenAlert Severity="AlertSeverity.Warning" Text="Please login to submit a request." />
@@ -48,15 +83,11 @@
     {
         var state = await AuthProvider.GetAuthenticationStateAsync();
         var id = state.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-
-        if (id is null)
-        {
-             return;
-        }
+        if (id is null) return;
 
         model.CreatedBy = Guid.Parse(id);
         await RequestsSvc.CreateAsync(model);
         Notify.Notify(NotificationSeverity.Success, "Submitted", "Your request was created.");
         Nav.NavigateTo("/requests");
-  }
+    }
 }

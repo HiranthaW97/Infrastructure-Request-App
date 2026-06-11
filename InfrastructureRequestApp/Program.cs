@@ -1,57 +1,55 @@
-using InfrastructureRequestApp.Components;                 // for App.razor
+using InfrastructureRequestApp.Components;
 using InfrastructureRequestApp.Data;
 using InfrastructureRequestApp.Data.Services;
 using InfrastructureRequestApp.Data.Services.Interfaces;
 using InfrastructureRequestApp.Security;
+using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Components.Authorization;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 using Radzen;
+using System.Security.Claims;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// EF Core DbContext
+builder.Services.AddMemoryCache();
+
 builder.Services.AddDbContext<InfraRequestsDbContext>(options =>
-	options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
-// Blazor Components (Interactive Server)
 builder.Services.AddRazorComponents()
-	.AddInteractiveServerComponents();
+    .AddInteractiveServerComponents();
 
-// Authentication & Authorization
-// Auth services
 builder.Services.AddHttpContextAccessor();
-builder.Services.AddAuthentication("Cookies")
-	.AddCookie("Cookies", options =>
-	{
-		options.Cookie.SameSite = SameSiteMode.Lax;
-		options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
-		options.LoginPath = "/login";
-		options.LogoutPath = "/logout";
-		options.AccessDeniedPath = "/denied";
-	});
+builder.Services.AddAuthentication(CookieAuthenticationDefaults.AuthenticationScheme)
+    .AddCookie(CookieAuthenticationDefaults.AuthenticationScheme, options =>
+    {
+        options.Cookie.SameSite = SameSiteMode.Lax;
+        options.Cookie.SecurePolicy = CookieSecurePolicy.SameAsRequest;
+        options.LoginPath = "/login";
+        options.LogoutPath = "/logout";
+        options.AccessDeniedPath = "/denied";
+    });
 
 builder.Services.AddScoped<AuthenticationStateProvider, CustomAuthStateProvider>();
 builder.Services.AddAuthorizationCore(options =>
 {
-	options.AddPolicy("AdminOnly", policy => policy.RequireRole(Roles.Admin));
+    options.AddPolicy("AdminOnly", policy => policy.RequireRole(Roles.Admin));
 });
 
-
-// Application services
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IRequestService, RequestService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
 
-// Radzen support (Notifications, Dialogs, etc.)
 builder.Services.AddRadzenComponents();
 
 var app = builder.Build();
 
-// Middleware pipeline
 if (!app.Environment.IsDevelopment())
 {
-	app.UseExceptionHandler("/Error", createScopeForErrors: true);
-	app.UseHsts();
+    app.UseExceptionHandler("/Error", createScopeForErrors: true);
+    app.UseHsts();
 }
 
 app.UseHttpsRedirection();
@@ -60,11 +58,48 @@ app.UseAntiforgery();
 app.UseAuthentication();
 app.UseAuthorization();
 
-// Map Blazor Components
-app.MapRazorComponents<App>()
-	.AddInteractiveServerRenderMode();
+// Issues the real auth cookie from a one-time token stored in cache.
+// Blazor Server can't write cookies after the WebSocket upgrade, so Login.razor
+// stores the validated user ID in cache and redirects here with forceLoad.
+app.MapGet("/account/signin", async (
+    string token,
+    IMemoryCache cache,
+    IUserService userService,
+    HttpContext httpContext) =>
+{
+    var cacheKey = $"signin:{token}";
+    if (!cache.TryGetValue(cacheKey, out Guid userId))
+        return Results.Redirect("/login?error=expired");
 
-// Optional: if hosting under a subpath (e.g., IIS virtual dir)
-// app.UsePathBase("/InfrastructureRequestApp");
+    cache.Remove(cacheKey);
+
+    var user = await userService.GetByIdAsync(userId);
+    if (user is null || !user.IsActive)
+        return Results.Redirect("/login?error=invalid");
+
+    var claims = new List<Claim>
+    {
+        new(ClaimTypes.NameIdentifier, user.UserId.ToString()),
+        new(ClaimTypes.Name, user.UserName),
+        new(ClaimTypes.GivenName, user.FullName ?? user.UserName),
+        new(ClaimTypes.Role, user.UserType)
+    };
+    var identity = new ClaimsIdentity(claims, CookieAuthenticationDefaults.AuthenticationScheme);
+    await httpContext.SignInAsync(
+        CookieAuthenticationDefaults.AuthenticationScheme,
+        new ClaimsPrincipal(identity));
+
+    return Results.Redirect(user.UserType == Roles.Admin ? "/admin" : "/");
+}).AllowAnonymous().DisableAntiforgery();
+
+// Clears the auth cookie and returns to login.
+app.MapGet("/account/signout", async (HttpContext httpContext) =>
+{
+    await httpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+    return Results.Redirect("/login");
+}).DisableAntiforgery();
+
+app.MapRazorComponents<App>()
+    .AddInteractiveServerRenderMode();
 
 app.Run();

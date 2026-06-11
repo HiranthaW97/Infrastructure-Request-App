@@ -1,61 +1,44 @@
-﻿using InfrastructureRequestApp.Data.Entities;
-using Microsoft.AspNetCore.Authentication;
-using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Components.Authorization;
 using System.Security.Claims;
 
 namespace InfrastructureRequestApp.Security
 {
-	public class CustomAuthStateProvider : AuthenticationStateProvider
-	{
-		private readonly IHttpContextAccessor _httpContextAccessor;
-		private User? _currentUser;
+    public class CustomAuthStateProvider : AuthenticationStateProvider
+    {
+        // Captured during construction, when IHttpContextAccessor.HttpContext is
+        // still the real HTTP request (before the WebSocket upgrade).
+        // This survives page refreshes because each new circuit re-runs the constructor
+        // against the fresh HTTP request that carries the auth cookie.
+        private ClaimsPrincipal _principal;
 
-		public CustomAuthStateProvider(IHttpContextAccessor httpContextAccessor)
-		{
-			_httpContextAccessor = httpContextAccessor;
-		}
+        public CustomAuthStateProvider(IHttpContextAccessor httpContextAccessor)
+        {
+            _principal = httpContextAccessor.HttpContext?.User
+                ?? new ClaimsPrincipal(new ClaimsIdentity());
+        }
 
-		public override Task<AuthenticationState> GetAuthenticationStateAsync()
-		{
-			var httpContext = _httpContextAccessor.HttpContext;
+        public override Task<AuthenticationState> GetAuthenticationStateAsync()
+            => Task.FromResult(new AuthenticationState(_principal));
 
-			if (httpContext?.User?.Identity?.IsAuthenticated == true)
-			{
-				// user already signed in via cookie
-				return Task.FromResult(new AuthenticationState(httpContext.User));
-			}
+        public void NotifySignedOut()
+        {
+            _principal = new ClaimsPrincipal(new ClaimsIdentity());
+            NotifyAuthenticationStateChanged(GetAuthenticationStateAsync());
+        }
 
-			// fall back to in-memory user for Blazor session
-			var identity = new ClaimsIdentity();
-			if (_currentUser is not null)
-			{
-				identity = new ClaimsIdentity(new[]
-				{
-					new Claim(ClaimTypes.NameIdentifier, _currentUser.UserId.ToString()),
-					new Claim(ClaimTypes.Name, _currentUser.UserName),
-					new Claim(ClaimTypes.Role, _currentUser.UserType)
-				}, "CustomAuth");
-			}
+        public Guid? CurrentUserId
+        {
+            get
+            {
+                var val = _principal.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                return val is null ? null : Guid.Parse(val);
+            }
+        }
 
-			return Task.FromResult(new AuthenticationState(new ClaimsPrincipal(identity)));
-		}
+        public string? CurrentUserFullName =>
+            _principal.FindFirst(ClaimTypes.GivenName)?.Value
+            ?? _principal.FindFirst(ClaimTypes.Name)?.Value;
 
-		public async Task SignInAsync(User user)
-		{
-			_currentUser = user;
-			NotifyAuthenticationStateChanged(GetAuthenticationStateAsync());
-			await Task.CompletedTask;
-		}
-
-		public async Task SignOutAsync()
-		{
-			_currentUser = null;
-			NotifyAuthenticationStateChanged(GetAuthenticationStateAsync());
-			await Task.CompletedTask;
-		}
-
-		public Guid? CurrentUserId => _currentUser?.UserId;
-		public string? CurrentUserRole => _currentUser?.UserType;
-	}
+        public string? CurrentUserRole => _principal.FindFirst(ClaimTypes.Role)?.Value;
+    }
 }

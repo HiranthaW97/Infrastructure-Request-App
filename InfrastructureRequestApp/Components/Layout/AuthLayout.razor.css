@@ -1,0 +1,7 @@
+/* Full-bleed shell; the Login page owns the split-screen layout. */
+.auth-fullpage {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background: #ffffff;
+}

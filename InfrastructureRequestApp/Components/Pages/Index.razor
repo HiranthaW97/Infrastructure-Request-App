@@ -1,9 +1,90 @@
-﻿@page "/"
-@using Radzen
+@page "/"
+@using System.Security.Claims
+@using InfrastructureRequestApp.Data.Services.Interfaces
+@inject IRequestService RequestsSvc
+@inject AuthenticationStateProvider AuthProvider
+@inject NavigationManager Nav
 
-<RadzenCard Style="max-width:600px; margin:auto; margin-top:60px;">
-    <h3>Welcome to Infrastructure Request App</h3>
-    <p>
-        Use the sidebar to view <b>My Requests</b> or create a <b>New Request</b>.
-    </p>
-</RadzenCard>
+<div class="page-header">
+    <div>
+        <h2 class="page-title">Welcome, @fullName</h2>
+        <p class="page-subtitle">@DateTime.Now.ToString("dddd, dd MMMM yyyy")</p>
+    </div>
+    <RadzenButton Text="New Request" Icon="add" ButtonStyle="ButtonStyle.Primary"
+                  Click='@(() => Nav.NavigateTo("/requests/new"))' />
+</div>
+
+<div class="stats-row">
+    <div class="stat-card">
+        <div class="stat-icon-wrap stat-icon-total">
+            <i class="material-icons">inbox</i>
+        </div>
+        <div>
+            <div class="stat-num">@totalCount</div>
+            <div class="stat-lbl">@(isAdmin ? "All Requests" : "My Requests")</div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon-wrap stat-icon-pending">
+            <i class="material-icons">schedule</i>
+        </div>
+        <div>
+            <div class="stat-num">@pendingCount</div>
+            <div class="stat-lbl">Pending</div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon-wrap stat-icon-progress">
+            <i class="material-icons">sync</i>
+        </div>
+        <div>
+            <div class="stat-num">@progressCount</div>
+            <div class="stat-lbl">In Progress</div>
+        </div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-icon-wrap stat-icon-done">
+            <i class="material-icons">check_circle</i>
+        </div>
+        <div>
+            <div class="stat-num">@completedCount</div>
+            <div class="stat-lbl">Completed</div>
+        </div>
+    </div>
+</div>
+
+@if (isAdmin)
+{
+    <div class="quick-links">
+        <RadzenButton Text="View All Requests" Icon="list" ButtonStyle="ButtonStyle.Secondary"
+                      Click='@(() => Nav.NavigateTo("/admin"))' />
+        <RadzenButton Text="Manage Users" Icon="group" ButtonStyle="ButtonStyle.Light"
+                      Click='@(() => Nav.NavigateTo("/admin/users"))' />
+    </div>
+}
+
+@code {
+    string fullName = "";
+    bool isAdmin;
+    int totalCount, pendingCount, progressCount, completedCount;
+
+    protected override async Task OnInitializedAsync()
+    {
+        var state = await AuthProvider.GetAuthenticationStateAsync();
+        fullName = state.User.FindFirst(ClaimTypes.GivenName)?.Value
+                   ?? state.User.Identity?.Name ?? "there";
+        isAdmin = state.User.IsInRole(Roles.Admin);
+
+        var idStr = state.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (idStr is null) return;
+
+        var requests = isAdmin
+            ? await RequestsSvc.GetAllAsync()
+            : await RequestsSvc.GetMineAsync(Guid.Parse(idStr));
+
+        totalCount    = requests.Count;
+        pendingCount  = requests.Count(r => r.Status == "Pending");
+        progressCount = requests.Count(r => r.Status == "In Progress");
+        completedCount = requests.Count(r => r.Status is "Completed" or "Closed");
+    }
+}

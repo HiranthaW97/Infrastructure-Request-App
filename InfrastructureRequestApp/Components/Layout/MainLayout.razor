@@ -1,4 +1,5 @@
-﻿@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
+@using System.Security.Claims
 @inherits LayoutComponentBase
 @inject NavigationManager Nav
 @inject AuthenticationStateProvider AuthProvider
@@ -6,27 +7,68 @@
 @inject NotificationService NotificationService
 
 <div class="page">
-  <div class="sidebar">
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <i class="material-icons sidebar-logo-icon">dns</i>
+            <span class="sidebar-title">InfraRequest</span>
+        </div>
+
         <RadzenPanelMenu>
             <RadzenPanelMenuItem Text="Dashboard" Path="/" Icon="home" />
             <RadzenPanelMenuItem Text="My Requests" Path="/requests" Icon="list" />
-            <RadzenPanelMenuItem Text="New Request" Path="/requests/new" Icon="add" />
-            <RadzenPanelMenuItem Text="Change Password" Path="/change-password"
-                                 Icon="lock" />
+            <RadzenPanelMenuItem Text="New Request" Path="/requests/new" Icon="add_circle" />
+            <RadzenPanelMenuItem Text="Change Password" Path="/change-password" Icon="lock" />
             <AuthorizeView Roles="Admin">
-                <RadzenPanelMenuItem Text="Admin" Icon="manage_accounts">
-                    <RadzenPanelMenuItem Text="All Requests" Path="/admin"
-                                         Icon="dashboard" />
-                    <RadzenPanelMenuItem Text="Manage Users" Path="/admin/users"
-                                         Icon="group" />
+                <RadzenPanelMenuItem Text="Admin" Icon="admin_panel_settings">
+                    <RadzenPanelMenuItem Text="All Requests" Path="/admin" Icon="dashboard" />
+                    <RadzenPanelMenuItem Text="Manage Users" Path="/admin/users" Icon="group" />
                 </RadzenPanelMenuItem>
             </AuthorizeView>
-            <RadzenPanelMenuItem Text="Logout" Path="/logout" Icon="logout" />
         </RadzenPanelMenu>
+
+        <div class="sidebar-footer">
+            <AuthorizeView>
+                <Authorized>
+                    @{
+                        var fullName = context.User.FindFirst(ClaimTypes.GivenName)?.Value
+                                       ?? context.User.Identity?.Name ?? "User";
+                        var initial = fullName.Length > 0 ? fullName[0].ToString().ToUpper() : "?";
+                        var role = context.User.FindFirst(ClaimTypes.Role)?.Value ?? "";
+                    }
+                    <div class="sidebar-user">
+                        <div class="sidebar-avatar">@initial</div>
+                        <div class="sidebar-user-info">
+                            <div class="sidebar-user-name">@fullName</div>
+                            <div class="sidebar-user-role">@role</div>
+                        </div>
+                        <a href="/logout" class="sidebar-logout" title="Sign out">
+                            <i class="material-icons">logout</i>
+                        </a>
+                    </div>
+                </Authorized>
+            </AuthorizeView>
+        </div>
     </div>
+
     <main>
         <div class="top-row px-4">
-            <h3>Infrastructure Request App</h3>
+            <span class="top-row-title">Infrastructure Request App</span>
+            <AuthorizeView>
+                <Authorized>
+                    @{
+                        var displayName = context.User.FindFirst(ClaimTypes.GivenName)?.Value
+                                          ?? context.User.Identity?.Name ?? "User";
+                        var displayRole = context.User.FindFirst(ClaimTypes.Role)?.Value ?? "";
+                    }
+                    <div class="top-row-user">
+                        <i class="material-icons top-user-icon">account_circle</i>
+                        <span class="top-user-name">@displayName</span>
+                        <span class="top-user-role @(displayRole == Roles.Admin ? "role-admin" : "role-standard")">
+                            @displayRole
+                        </span>
+                    </div>
+                </Authorized>
+            </AuthorizeView>
         </div>
         <div class="content px-4">
             @Body

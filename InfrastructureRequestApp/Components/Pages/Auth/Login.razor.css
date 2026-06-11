@@ -1,0 +1,355 @@
+/* ── InfraRequest login — split-screen, "Enterprise Creative" design ── */
+
+.login-page {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    width: 100%;
+    background: #f9f9fc; /* surface */
+    color: #1a1c1e;      /* on-surface */
+}
+
+.login-main {
+    flex: 1 1 auto;
+    display: flex;
+    width: 100%;
+}
+
+/* ── Left: brand / visual panel ── */
+.login-visual {
+    display: none;
+    position: relative;
+    width: 50%;
+    overflow: hidden;
+    align-items: center;
+    justify-content: center;
+    /* Offline stand-in for the data-center photo: deep blue → teal */
+    background: radial-gradient(circle at 30% 20%, #0a2a6e 0%, #00327d 45%, #013b4f 100%);
+}
+
+.login-visual-overlay {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(0, 50, 125, 0.65), rgba(0, 106, 106, 0.55));
+    /* subtle grid to evoke server racks / network mesh */
+    background-image:
+        linear-gradient(135deg, rgba(0, 50, 125, 0.65), rgba(0, 106, 106, 0.55)),
+        linear-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255, 255, 255, 0.05) 1px, transparent 1px);
+    background-size: 100% 100%, 38px 38px, 38px 38px;
+}
+
+.login-glass {
+    position: relative;
+    z-index: 1;
+    max-width: 32rem;
+    margin: 0 24px;
+    padding: 64px 48px;
+    text-align: center;
+    background: rgba(255, 255, 255, 0.10);
+    border: 1px solid rgba(255, 255, 255, 0.20);
+    border-radius: 1.5rem;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    box-shadow: 0 24px 64px rgba(0, 25, 70, 0.35);
+    transition: transform 0.5s ease;
+}
+
+.login-glass:hover {
+    transform: scale(1.02);
+}
+
+.login-glass-icon {
+    font-size: 3.5rem;
+    color: #b1c5ff !important; /* inverse-primary */
+}
+
+.login-glass-title {
+    margin: 16px 0 12px;
+    font-size: 48px;
+    line-height: 56px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: #ffffff;
+}
+
+.login-glass-sub {
+    margin: 0 auto;
+    max-width: 24rem;
+    font-size: 18px;
+    line-height: 24px;
+    font-weight: 500;
+    color: #dae2ff; /* primary-fixed */
+}
+
+/* ── Right: form area ── */
+.login-form-area {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #ffffff;
+    padding: 16px;
+}
+
+.login-card {
+    width: 100%;
+    max-width: 28rem;
+    padding: 40px;
+    background: #ffffff;
+    border: 1px solid #e2e2e5; /* surface-variant */
+    border-radius: 1.5rem;
+    box-shadow: 0 12px 32px rgba(0, 50, 125, 0.04);
+}
+
+/* Mobile logo (shown only when the left panel is hidden) */
+.login-mobile-logo {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    margin-bottom: 32px;
+}
+
+.login-mobile-icon {
+    font-size: 2.5rem;
+    color: #00327d !important; /* primary */
+}
+
+.login-mobile-name {
+    margin: 8px 0 0;
+    font-size: 24px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    color: #00327d;
+}
+
+.login-welcome {
+    margin-bottom: 32px;
+}
+
+.login-welcome h2 {
+    margin: 0 0 8px;
+    font-size: 30px;
+    line-height: 38px;
+    font-weight: 700;
+    letter-spacing: -0.02em;
+    color: #1a1c1e;
+}
+
+.login-welcome p {
+    margin: 0;
+    font-size: 16px;
+    line-height: 24px;
+    color: #434653; /* on-surface-variant */
+}
+
+.login-error {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 24px;
+    padding: 10px 14px;
+    background: #ffdad6;          /* error-container */
+    color: #93000a;               /* on-error-container */
+    border: 1px solid #ffb4ab;
+    border-radius: 0.5rem;
+    font-size: 14px;
+}
+
+.login-error .material-icons {
+    font-size: 1.1rem;
+}
+
+/* ── Floating-label input fields ── */
+.login-field {
+    position: relative;
+    margin-bottom: 24px;
+}
+
+.login-field-icon {
+    position: absolute;
+    left: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 1.25rem;
+    color: #737784; /* outline */
+    pointer-events: none;
+}
+
+.login-input {
+    width: 100%;
+    height: 48px;
+    padding: 0 12px 0 40px;
+    font-size: 16px;
+    color: #1a1c1e;
+    background: #ffffff;
+    border: 1px solid #c3c6d5; /* outline-variant */
+    border-radius: 0.5rem;
+    outline: none;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.login-input::placeholder {
+    color: transparent;
+}
+
+.login-input:focus {
+    border-color: #00327d;                       /* primary */
+    box-shadow: 0 0 0 3px rgba(0, 50, 125, 0.10); /* accent glow */
+}
+
+.login-label {
+    position: absolute;
+    left: 40px;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 16px;
+    color: #737784;
+    background: #ffffff;
+    padding: 0 4px;
+    pointer-events: none;
+    transition: all 0.2s ease;
+}
+
+/* Float the label up on focus or when the field has a value */
+.login-input:focus + .login-label,
+.login-input:not(:placeholder-shown) + .login-label {
+    top: 0;
+    left: 32px;
+    font-size: 12px;
+    color: #00327d;
+}
+
+/* ── Remember me / forgot password row ── */
+.login-options {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin: 12px 0 0;
+}
+
+.login-remember {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 14px;
+    color: #434653;
+    cursor: pointer;
+}
+
+.login-remember input {
+    width: 16px;
+    height: 16px;
+    accent-color: #00327d;
+    cursor: pointer;
+}
+
+.login-forgot {
+    font-size: 14px;
+    font-weight: 500;
+    color: #006a6a; /* secondary */
+    text-decoration: none;
+}
+
+.login-forgot:hover {
+    color: #004f4f;
+}
+
+/* ── Buttons ── */
+.login-submit {
+    width: 100%;
+    margin-top: 32px;
+    padding: 12px 24px;
+    font-size: 18px;
+    font-weight: 600;
+    color: #ffffff;
+    background: #0047ab;          /* primary-container */
+    border: 1px solid transparent;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.login-submit:hover:not(:disabled) {
+    background: #00327d;          /* primary */
+}
+
+.login-submit:disabled {
+    opacity: 0.7;
+    cursor: default;
+}
+
+/* ── Footer ── */
+.login-footer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 32px;
+    background: #f3f3f6;          /* surface-container-low */
+    border-top: 1px solid rgba(115, 119, 132, 0.2);
+}
+
+.login-footer-brand {
+    text-align: center;
+}
+
+.login-footer-name {
+    display: block;
+    font-size: 18px;
+    font-weight: 700;
+    color: #1a1c1e;
+    margin-bottom: 4px;
+}
+
+.login-footer-brand p {
+    margin: 0;
+    font-size: 14px;
+    color: #006a6a;
+}
+
+.login-footer-nav {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 24px;
+}
+
+.login-footer-nav a {
+    font-size: 14px;
+    color: #434653;
+    text-decoration: underline;
+}
+
+.login-footer-nav a:hover {
+    color: #006a6a;
+}
+
+/* ── Desktop: reveal the split layout ── */
+@media (min-width: 1024px) {
+    .login-visual {
+        display: flex;
+    }
+
+    .login-form-area {
+        width: 50%;
+        padding: 32px;
+    }
+
+    .login-mobile-logo {
+        display: none;
+    }
+
+    .login-welcome {
+        text-align: left;
+    }
+
+    .login-footer {
+        flex-direction: row;
+        justify-content: space-between;
+    }
+
+    .login-footer-brand {
+        text-align: left;
+    }
+}

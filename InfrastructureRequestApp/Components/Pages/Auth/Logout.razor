@@ -1,13 +1,13 @@
-﻿@page "/logout"
+@page "/logout"
 @attribute [AllowAnonymous]
-@using Microsoft.AspNetCore.Components.Authorization
-@inject AuthenticationStateProvider AuthProvider
+@layout AuthLayout
 @inject NavigationManager Nav
+@inject AuthenticationStateProvider AuthProvider
 
 @code {
-    protected override async Task OnInitializedAsync()
+    protected override void OnInitialized()
     {
-        await (AuthProvider as CustomAuthStateProvider)!.SignOutAsync();
-        Nav.NavigateTo("/login", true);
+        (AuthProvider as CustomAuthStateProvider)?.NotifySignedOut();
+        Nav.NavigateTo("/account/signout", forceLoad: true);
     }
 }

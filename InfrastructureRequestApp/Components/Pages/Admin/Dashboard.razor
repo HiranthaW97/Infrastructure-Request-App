@@ -1,22 +1,38 @@
-﻿@page "/admin"
+@page "/admin"
 @using InfrastructureRequestApp.Data.Services.Interfaces
 @attribute [Authorize(Roles = Roles.Admin)]
 @inject IRequestService RequestsSvc
 @inject NavigationManager Nav
 
+<div class="page-header">
+    <h2 class="page-title">All Requests</h2>
+</div>
+
 <RadzenCard>
-    <h3>All Requests</h3>
-    <RadzenDataGrid Data="data" TItem="Request" AllowFiltering="true" AllowSorting="true" AllowPaging="true" PageSize="12">
+    <RadzenDataGrid Data="data" TItem="Request"
+                    AllowFiltering="true" AllowSorting="true"
+                    AllowPaging="true" PageSize="12"
+                    EmptyText="No requests found.">
         <Columns>
-            <RadzenDataGridColumn TItem="Request" Property="RequestId" Title="#" Width="70px" />
-            <RadzenDataGridColumn TItem="Request" Property="RequestType" Title="Type" />
+            <RadzenDataGridColumn TItem="Request" Property="RequestType" Title="Type" Width="150px" />
             <RadzenDataGridColumn TItem="Request" Property="Description" Title="Description" />
-            <RadzenDataGridColumn TItem="Request" Property="Urgency" Title="Urgency" />
-            <RadzenDataGridColumn TItem="Request" Property="Status" Title="Status" />
-            <RadzenDataGridColumn TItem="Request" Property="CreatedDate" Title="Created" FormatString="{0:yyyy-MM-dd HH:mm}" />
-            <RadzenDataGridColumn TItem="Request" Title="Actions">
+            <RadzenDataGridColumn TItem="Request" Property="Urgency" Title="Urgency" Width="150px">
                 <Template Context="r">
-                    <RadzenButton Text="Open" Size="ButtonSize.Small" Click="@(() => Nav.NavigateTo($"/admin/requests/{r.RequestId.ToString()}"))" />
+                    <span class="urgency-badge urgency-@r.Urgency?.ToLower()">@r.Urgency</span>
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="Request" Property="Status" Title="Status" Width="160px">
+                <Template Context="r">
+                    <span class="status-badge status-@r.Status?.Replace(" ", "-")">@r.Status</span>
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="Request" Property="CreatedDate" Title="Created"
+                                  Width="150px" Filterable="false" FormatString="{0:dd MMM yyyy}" />
+            <RadzenDataGridColumn TItem="Request" Title="" Width="90px" Sortable="false" Filterable="false">
+                <Template Context="r">
+                    <RadzenButton Text="Open" Size="ButtonSize.Small"
+                                  ButtonStyle="ButtonStyle.Primary"
+                                  Click="@(() => Nav.NavigateTo($"/admin/requests/{r.RequestId}"))" />
                 </Template>
             </RadzenDataGridColumn>
         </Columns>

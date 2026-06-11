@@ -1,48 +1,106 @@
-﻿@page "/admin/users"
+@page "/admin/users"
 @using InfrastructureRequestApp.Data.Services.Interfaces
 @using System.ComponentModel.DataAnnotations
 @attribute [Authorize(Roles = Roles.Admin)]
 @inject IUserService Users
 @inject NotificationService Notify
 
+<div class="page-header">
+    <h2 class="page-title">Manage Users</h2>
+</div>
+
+<RadzenCard class="form-card mb-3">
+    <div class="form-card-head">
+        <div class="form-icon form-icon-add"><i class="material-icons">person_add</i></div>
+        <div>
+            <h3 class="form-card-title">Add a new user</h3>
+            <p class="form-card-sub">New users receive a temporary password they can change after first login.</p>
+        </div>
+    </div>
+
+    <RadzenTemplateForm TItem="CreateUserVM" Data="model" Submit="Create">
+        <RadzenRow Gap="1rem" class="mt-3" AlignItems="AlignItems.End">
+            <RadzenColumn Size="12" SizeMD="3">
+                <RadzenFormField Text="Full name" Variant="Variant.Outlined" Style="width:100%">
+                    <ChildContent>
+                        <RadzenTextBox @bind-Value="model.FullName" Name="FullName" />
+                    </ChildContent>
+                    <Helper>
+                        <RadzenRequiredValidator Component="FullName" Text="Required" />
+                    </Helper>
+                </RadzenFormField>
+            </RadzenColumn>
+            <RadzenColumn Size="12" SizeMD="3">
+                <RadzenFormField Text="Username" Variant="Variant.Outlined" Style="width:100%">
+                    <ChildContent>
+                        <RadzenTextBox @bind-Value="model.UserName" Name="UserName" />
+                    </ChildContent>
+                    <Helper>
+                        <RadzenRequiredValidator Component="UserName" Text="Required" />
+                    </Helper>
+                </RadzenFormField>
+            </RadzenColumn>
+            <RadzenColumn Size="12" SizeMD="2">
+                <RadzenFormField Text="Role" Variant="Variant.Outlined" Style="width:100%">
+                    <RadzenDropDown @bind-Value="model.UserType" Data="roles" />
+                </RadzenFormField>
+            </RadzenColumn>
+            <RadzenColumn Size="12" SizeMD="2">
+                <RadzenFormField Text="Temp password" Variant="Variant.Outlined" Style="width:100%">
+                    <RadzenPassword @bind-Value="model.Password" />
+                </RadzenFormField>
+            </RadzenColumn>
+            <RadzenColumn Size="12" SizeMD="2">
+                <RadzenButton Text="Add User" Icon="add" ButtonStyle="ButtonStyle.Primary"
+                              ButtonType="ButtonType.Submit" Style="width:100%" />
+            </RadzenColumn>
+        </RadzenRow>
+    </RadzenTemplateForm>
+</RadzenCard>
 
 <RadzenCard>
-    <h3>Manage Users</h3>
-    <EditForm Model="model" OnValidSubmit="Create">
-        <DataAnnotationsValidator />
-        <div class="grid" style="grid-template-columns: 1fr 1fr 1fr 1fr; gap: 8px;">
-            <RadzenTextBox @bind-Value="model.FullName" Placeholder="Full name" />
-            <RadzenTextBox @bind-Value="model.UserName" Placeholder="Username" />
-            <RadzenDropDown @bind-Value="model.UserType" Data="roles" />
-            <RadzenPassword @bind-Value="model.Password" Placeholder="Temporary password" />
-        </div>
-        <RadzenButton class="mt-2" Text="Add User" ButtonStyle="ButtonStyle.Primary" Type="Submit" />
-    </EditForm>
-    <RadzenDataGrid Data="users" TItem="User" class="mt-3" AllowSorting
-                    AllowPaging PageSize="10">
+    <RadzenDataGrid Data="users" TItem="User" AllowSorting AllowPaging PageSize="10"
+                    EmptyText="No users found.">
         <Columns>
-            <RadzenDataGridColumn TItem="User" Property="UserId" Title="#" />
-            <RadzenDataGridColumn TItem="User" Property="FullName" Title="Full Name" />
+            <RadzenDataGridColumn TItem="User" Property="FullName" Title="Full Name">
+                <Template Context="u">
+                    <div class="user-cell">
+                        <div class="user-avatar">@(u.FullName?.Length > 0 ? u.FullName[0].ToString().ToUpper() : "?")</div>
+                        <span>@u.FullName</span>
+                    </div>
+                </Template>
+            </RadzenDataGridColumn>
             <RadzenDataGridColumn TItem="User" Property="UserName" Title="Username" />
-            <RadzenDataGridColumn TItem="User" Property="UserType" Title="Role" />
-            <RadzenDataGridColumn TItem="User" Property="IsActive" Title="Active" />
+            <RadzenDataGridColumn TItem="User" Property="UserType" Title="Role" Width="140px">
+                <Template Context="u">
+                    <span class="role-pill @(u.UserType == Roles.Admin ? "role-admin" : "role-standard")">@u.UserType</span>
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="User" Property="IsActive" Title="Status" Width="120px">
+                <Template Context="u">
+                    @if (u.IsActive)
+                    {
+                        <span class="status-badge status-Completed">Active</span>
+                    }
+                    else
+                    {
+                        <span class="status-badge status-Closed">Inactive</span>
+                    }
+                </Template>
+            </RadzenDataGridColumn>
+            <RadzenDataGridColumn TItem="User" Property="CreatedDate" Title="Created" Width="150px"
+                                  FormatString="{0:dd MMM yyyy}" />
         </Columns>
     </RadzenDataGrid>
 </RadzenCard>
 
-
 @code {
-
     class CreateUserVM
     {
-        [Required(ErrorMessage = "Full Name is required")]
-        public string FullName { get; set; } = string.Empty;
-
-        [Required(ErrorMessage = "Username is required")]
-        public string UserName { get; set; } = string.Empty;
-
+        [Required] public string FullName { get; set; } = string.Empty;
+        [Required] public string UserName { get; set; } = string.Empty;
         public string UserType { get; set; } = Roles.Standard;
-        public string Password { get; set; } = "User@1234";
+        public string Password { get; set; } = "test";
     }
 
     CreateUserVM model = new();
@@ -56,28 +114,19 @@
 
     async Task Create()
     {
-        // Trim and validate required fields
-        if (string.IsNullOrWhiteSpace(model.FullName) || string.IsNullOrWhiteSpace(model.UserName))
-        {
-            Notify.Notify(NotificationSeverity.Warning,
-                "Missing Information",
-                "Please enter both Full Name and Username before saving.");
-            return;
-        }
-
         var u = new User
         {
             FullName = model.FullName.Trim(),
             UserName = model.UserName.Trim(),
             UserType = model.UserType,
-            IsActive = true
+            IsActive = true,
+            CreatedDate = DateTime.UtcNow
         };
 
         await Users.CreateAsync(u, model.Password);
         Notify.Notify(NotificationSeverity.Success, "User added", $"{model.FullName} created.");
 
         users = await Users.GetAllAsync();
-        model = new(); // reset form
+        model = new();
     }
-
 }

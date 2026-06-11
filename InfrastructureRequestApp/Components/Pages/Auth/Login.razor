@@ -1,67 +1,149 @@
-﻿@page "/login"
+@page "/login"
 @attribute [AllowAnonymous]
+@layout AuthLayout
 @using InfrastructureRequestApp.Data.Services.Interfaces
-@using Microsoft.AspNetCore.Components.Authorization
-@using Microsoft.AspNetCore.Components.Forms
+@using Microsoft.AspNetCore.Components.Web
+@using Microsoft.Extensions.Caching.Memory
 @inject IAuthService Auth
-@inject IUserService Users
 @inject NavigationManager Nav
-@inject AuthenticationStateProvider AuthProvider
-@inject NotificationService Notify
+@inject IMemoryCache Cache
 
-<RadzenTemplateForm TItem="LoginModel" Data="@model" Submit="HandleLogin">
-    <RadzenCard Style="max-width:420px; margin:auto; margin-top:80px;">
-        <h3 class="text-center mb-4">Sign in</h3>
+<div class="login-page">
+    <main class="login-main">
+        <!-- Left: brand / visual panel (hidden on mobile) -->
+        <aside class="login-visual">
+            <div class="login-visual-overlay"></div>
+            <div class="login-glass">
+                <i class="material-icons login-glass-icon">dns</i>
+                <h1 class="login-glass-title">InfraRequest</h1>
+                <p class="login-glass-sub">Enterprise IT Infrastructure Management &amp; Connectivity Portal</p>
+            </div>
+        </aside>
 
-        <RadzenTextBox @bind-Value="model.UserName"
-                       Name="UserName"
-                       Placeholder="Username"
-                       Style="width:100%" />
-        <ValidationMessage For="@(() => model.UserName)" />
+        <!-- Right: login form -->
+        <section class="login-form-area">
+            <div class="login-card">
+                <!-- Mobile logo (left panel is hidden on small screens) -->
+                <div class="login-mobile-logo">
+                    <i class="material-icons login-mobile-icon">dns</i>
+                    <h1 class="login-mobile-name">InfraRequest</h1>
+                </div>
 
-        <RadzenPassword @bind-Value="model.Password"
-                        Name="Password"
-                        Placeholder="Password"
-                        Style="width:100%; margin-top:10px;" />
-        <ValidationMessage For="@(() => model.Password)" />
+                <div class="login-welcome">
+                    <h2>Welcome back</h2>
+                    <p>Please sign in to your enterprise account.</p>
+                </div>
 
-        <div class="mt-3 text-center">
-            <RadzenButton Text="Login"
-                          ButtonStyle="ButtonStyle.Primary"
-                          Type="Submit"
-                          Style="width:100%;" />
+                @if (errorMessage is not null)
+                {
+                    <div class="login-error">
+                        <i class="material-icons">error_outline</i>
+                        <span>@errorMessage</span>
+                    </div>
+                }
+
+                <div class="login-field">
+                    <i class="material-icons login-field-icon">person</i>
+                    <input class="login-input"
+                           id="username"
+                           placeholder="Username"
+                           @bind="userName"
+                           @bind:event="oninput"
+                           @onkeydown="OnKeyDown" />
+                    <label class="login-label" for="username">Username</label>
+                </div>
+
+                <div class="login-field">
+                    <i class="material-icons login-field-icon">lock</i>
+                    <input class="login-input"
+                           id="password"
+                           type="password"
+                           placeholder="Password"
+                           @bind="password"
+                           @bind:event="oninput"
+                           @onkeydown="OnKeyDown" />
+                    <label class="login-label" for="password">Password</label>
+                </div>
+
+                <div class="login-options">
+                    <label class="login-remember">
+                        <input type="checkbox" @bind="rememberMe" />
+                        <span>Remember me</span>
+                    </label>
+                    <a class="login-forgot" href="javascript:void(0)">Forgot password?</a>
+                </div>
+
+                <button class="login-submit"
+                        type="button"
+                        @onclick="HandleLogin"
+                        disabled="@isBusy">
+                    @(isBusy ? "Signing in…" : "Sign In")
+                </button>
+            </div>
+        </section>
+    </main>
+
+    <footer class="login-footer">
+        <div class="login-footer-brand">
+            <span class="login-footer-name">InfraRequest</span>
+            <p>© 2024 InfraRequest IT Solutions. All rights reserved.</p>
         </div>
-    </RadzenCard>
-</RadzenTemplateForm>
+        <nav class="login-footer-nav">
+            <a href="javascript:void(0)">Privacy Policy</a>
+            <a href="javascript:void(0)">Terms of Service</a>
+            <a href="javascript:void(0)">Security Compliance</a>
+        </nav>
+    </footer>
+</div>
 
 @code {
-    private LoginModel model = new();
+    private string userName = string.Empty;
+    private string password = string.Empty;
+    private bool rememberMe;
+    private string? errorMessage;
+    private bool isBusy;
 
-    class LoginModel
+    [SupplyParameterFromQuery] private string? error { get; set; }
+
+    protected override void OnInitialized()
     {
-        public string UserName { get; set; } = string.Empty; 
-        public string Password { get; set; } = string.Empty;
+        errorMessage = error switch
+        {
+            "expired" => "Session expired. Please sign in again.",
+            "invalid" => "Your account is inactive. Contact an administrator.",
+            _ => null
+        };
     }
 
     private async Task HandleLogin()
     {
-        var user = await Auth.ValidateUserAsync(model.UserName, model.Password);
-        if (user is null)
+        if (string.IsNullOrWhiteSpace(userName) || string.IsNullOrWhiteSpace(password))
         {
-            Notify.Notify(NotificationSeverity.Error, "Login failed", "Invalid credentials or inactive user.");
+            errorMessage = "Please enter your username and password.";
             return;
         }
 
-        await (AuthProvider as CustomAuthStateProvider)!.SignInAsync(user);
+        isBusy = true;
+        errorMessage = null;
 
-        if (user.UserType == Roles.Admin)
+        var user = await Auth.ValidateUserAsync(userName, password);
+
+        if (user is null)
         {
-            Nav.NavigateTo("/admin/dashboard");
-        }
-        else
-        {
-            Nav.NavigateTo("/");
+            errorMessage = "Invalid username or password.";
+            isBusy = false;
+            return;
         }
 
+        // Store the validated user ID in cache and redirect to the sign-in endpoint,
+        // which issues the real auth cookie (can't set cookies from Blazor interactive mode).
+        var token = Guid.NewGuid().ToString("N");
+        Cache.Set($"signin:{token}", user.UserId, TimeSpan.FromSeconds(60));
+        Nav.NavigateTo($"/account/signin?token={token}", forceLoad: true);
+    }
+
+    private async Task OnKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter") await HandleLogin();
     }
 }
