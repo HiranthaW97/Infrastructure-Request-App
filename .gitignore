@@ -1,0 +1,24 @@
+# Build output
+[Bb]in/
+[Oo]bj/
+[Ll]og/
+[Ll]ogs/
+
+# Visual Studio / Rider user-specific files
+*.user
+*.suo
+*.userosscache
+*.sln.docstates
+.vs/
+.idea/
+
+# EF Core Power Tools
+efpt.config.json.user
+
+# Secrets / local config (never commit credentials)
+appsettings.*.local.json
+secrets.json
+
+# OS files
+.DS_Store
+Thumbs.db
