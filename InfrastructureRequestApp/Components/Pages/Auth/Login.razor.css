@@ -279,6 +279,56 @@
     cursor: default;
 }
 
+.login-submit-secondary {
+    margin-top: 16px;
+    font-size: 16px;
+    background: #006a6a;          /* secondary */
+}
+
+.login-submit-secondary:hover:not(:disabled) {
+    background: #004f4f;
+}
+
+/* ── Forgot-password panel (separate from the sign-in fields) ── */
+.login-forgot-panel {
+    margin-top: 28px;
+    padding: 24px;
+    background: #f3f3f6;          /* surface-container-low */
+    border: 1px solid #e2e2e5;
+    border-radius: 0.75rem;
+}
+
+.login-forgot-title {
+    margin: 0 0 6px;
+    font-size: 18px;
+    font-weight: 700;
+    color: #1a1c1e;
+}
+
+.login-forgot-sub {
+    margin: 0 0 20px;
+    font-size: 14px;
+    line-height: 20px;
+    color: #434653;
+}
+
+.login-info {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 20px;
+    padding: 10px 14px;
+    background: #cce8e2;          /* tertiary-container-ish */
+    color: #00504a;
+    border: 1px solid #9fd2c8;
+    border-radius: 0.5rem;
+    font-size: 14px;
+}
+
+.login-info .material-icons {
+    font-size: 1.1rem;
+}
+
 /* ── Footer ── */
 .login-footer {
     display: flex;

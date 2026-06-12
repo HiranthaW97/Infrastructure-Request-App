@@ -1,6 +1,7 @@
 using InfrastructureRequestApp.Components;
 using InfrastructureRequestApp.Data;
 using InfrastructureRequestApp.Data.Services;
+using InfrastructureRequestApp.Data.Services.Email;
 using InfrastructureRequestApp.Data.Services.Interfaces;
 using InfrastructureRequestApp.Security;
 using Microsoft.AspNetCore.Authentication;
@@ -38,6 +39,8 @@ builder.Services.AddAuthorizationCore(options =>
     options.AddPolicy("AdminOnly", policy => policy.RequireRole(Roles.Admin));
 });
 
+builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("Email"));
+builder.Services.AddScoped<IEmailService, SmtpEmailService>();
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IRequestService, RequestService>();
 builder.Services.AddScoped<IAuthService, AuthService>();
@@ -88,6 +91,10 @@ app.MapGet("/account/signin", async (
     await httpContext.SignInAsync(
         CookieAuthenticationDefaults.AuthenticationScheme,
         new ClaimsPrincipal(identity));
+
+    // Accounts logging in with a temporary password must set a new one first.
+    if (user.MustResetPassword)
+        return Results.Redirect("/reset-password");
 
     return Results.Redirect(user.UserType == Roles.Admin ? "/admin" : "/");
 }).AllowAnonymous().DisableAntiforgery();

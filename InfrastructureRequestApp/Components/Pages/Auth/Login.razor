@@ -5,6 +5,8 @@
 @using Microsoft.AspNetCore.Components.Web
 @using Microsoft.Extensions.Caching.Memory
 @inject IAuthService Auth
+@inject IUserService Users
+@inject IEmailService Email
 @inject NavigationManager Nav
 @inject IMemoryCache Cache
 
@@ -70,7 +72,9 @@
                         <input type="checkbox" @bind="rememberMe" />
                         <span>Remember me</span>
                     </label>
-                    <a class="login-forgot" href="javascript:void(0)">Forgot password?</a>
+                    <a class="login-forgot" href="javascript:void(0)" @onclick="ToggleForgot" @onclick:preventDefault>
+                        Forgot password?
+                    </a>
                 </div>
 
                 <button class="login-submit"
@@ -79,6 +83,42 @@
                         disabled="@isBusy">
                     @(isBusy ? "Signing in…" : "Sign In")
                 </button>
+
+                @if (showForgot)
+                {
+                    <div class="login-forgot-panel">
+                        <h3 class="login-forgot-title">Reset your password</h3>
+                        <p class="login-forgot-sub">
+                            Enter your username and we'll email a temporary password to the
+                            address on your account.
+                        </p>
+
+                        @if (forgotMessage is not null)
+                        {
+                            <div class="login-info">
+                                <i class="material-icons">mark_email_read</i>
+                                <span>@forgotMessage</span>
+                            </div>
+                        }
+
+                        <div class="login-field">
+                            <i class="material-icons login-field-icon">person</i>
+                            <input class="login-input"
+                                   id="forgotUserName"
+                                   placeholder="Username"
+                                   @bind="forgotUserName"
+                                   @bind:event="oninput" />
+                            <label class="login-label" for="forgotUserName">Username</label>
+                        </div>
+
+                        <button class="login-submit login-submit-secondary"
+                                type="button"
+                                @onclick="SendRecoveryEmail"
+                                disabled="@forgotBusy">
+                            @(forgotBusy ? "Sending…" : "Send password recovery email")
+                        </button>
+                    </div>
+                }
             </div>
         </section>
     </main>
@@ -102,6 +142,11 @@
     private bool rememberMe;
     private string? errorMessage;
     private bool isBusy;
+
+    private bool showForgot;
+    private string forgotUserName = string.Empty;
+    private bool forgotBusy;
+    private string? forgotMessage;
 
     [SupplyParameterFromQuery] private string? error { get; set; }
 
@@ -145,5 +190,50 @@
     private async Task OnKeyDown(KeyboardEventArgs e)
     {
         if (e.Key == "Enter") await HandleLogin();
+    }
+
+    private void ToggleForgot()
+    {
+        showForgot = !showForgot;
+        forgotMessage = null;
+    }
+
+    private async Task SendRecoveryEmail()
+    {
+        if (string.IsNullOrWhiteSpace(forgotUserName))
+        {
+            forgotMessage = "Please enter your username.";
+            return;
+        }
+
+        forgotBusy = true;
+        forgotMessage = null;
+
+        var (user, tempPassword) = await Users.StartPasswordRecoveryAsync(forgotUserName);
+
+        if (user is not null && tempPassword is not null)
+        {
+            var body =
+                $"Hello {user.FullName},\n\n" +
+                "A password reset was requested for your InfraRequest account.\n\n" +
+                $"Username: {user.UserName}\n" +
+                $"Temporary password: {tempPassword}\n\n" +
+                "Sign in with this temporary password. You will be asked to set a new " +
+                "password before you can continue.\n\n" +
+                "If you did not request this, please contact your administrator.\n\n" +
+                "— InfraRequest IT Solutions";
+
+            await Email.SendAsync(user.Email, "Your InfraRequest temporary password", body);
+        }
+
+        // Generic confirmation either way so usernames can't be probed.
+        forgotMessage = "If that username exists, a recovery email has been sent. " +
+                        "This page will refresh shortly.";
+        forgotBusy = false;
+        StateHasChanged();
+
+        // Give the user a moment to read the message, then refresh the login page.
+        await Task.Delay(3000);
+        Nav.NavigateTo("/login", forceLoad: true);
     }
 }

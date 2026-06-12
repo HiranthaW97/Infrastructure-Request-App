@@ -17,6 +17,7 @@ efpt.config.json.user
 
 # Secrets / local config (never commit credentials)
 appsettings.*.local.json
+appsettings.Development.json
 secrets.json
 
 # OS files

@@ -15,6 +15,9 @@
                     EmptyText="No requests found.">
         <Columns>
             <RadzenDataGridColumn TItem="Request" Property="RequestType" Title="Type" Width="150px" />
+            <RadzenDataGridColumn TItem="Request" Property="CreatedByNavigation.FullName" Title="Requested By" Width="170px">
+                <Template Context="r">@(r.CreatedByNavigation?.FullName ?? "-")</Template>
+            </RadzenDataGridColumn>
             <RadzenDataGridColumn TItem="Request" Property="Description" Title="Description" />
             <RadzenDataGridColumn TItem="Request" Property="Urgency" Title="Urgency" Width="150px">
                 <Template Context="r">

@@ -2,6 +2,8 @@
 using InfrastructureRequestApp.Data.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using System;
+using System.Security.Cryptography;
+using System.Text;
 
 namespace InfrastructureRequestApp.Data.Services
 {
@@ -32,8 +34,41 @@ namespace InfrastructureRequestApp.Data.Services
 			}
 
 			user.PasswordHash = PasswordHasher.Hash(newPassword);
+			// A successful change clears any pending forced-reset requirement.
+			user.MustResetPassword = false;
 			await _dbContext.SaveChangesAsync();
 			return true;
+		}
+
+		public async Task<(User? user, string? temporaryPassword)> StartPasswordRecoveryAsync(string userName)
+		{
+			if (string.IsNullOrWhiteSpace(userName))
+				return (null, null);
+
+			var normalized = userName.Trim().ToLowerInvariant();
+			var user = await _dbContext.Users
+				.FirstOrDefaultAsync(u => u.UserName.ToLower() == normalized && u.IsActive);
+
+			if (user == null)
+				return (null, null);
+
+			var tempPassword = GenerateTemporaryPassword();
+			user.PasswordHash = PasswordHasher.Hash(tempPassword);
+			user.MustResetPassword = true;
+			await _dbContext.SaveChangesAsync();
+
+			return (user, tempPassword);
+		}
+
+		private static string GenerateTemporaryPassword()
+		{
+			// Avoids visually ambiguous characters (0/O, 1/l/I) for readability.
+			const string chars = "ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789";
+			var bytes = RandomNumberGenerator.GetBytes(10);
+			var sb = new StringBuilder(bytes.Length);
+			foreach (var b in bytes)
+				sb.Append(chars[b % chars.Length]);
+			return sb.ToString();
 		}
 
 		public async Task<Guid> CreateAsync(User user, string plainPassword)

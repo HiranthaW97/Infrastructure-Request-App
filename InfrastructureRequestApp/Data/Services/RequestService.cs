@@ -37,7 +37,9 @@ namespace InfrastructureRequestApp.Data.Services
 
 		public Task<List<Request>> GetAllAsync(string? status = null)
 		{
-			var requests = _dbContext.Requests.AsQueryable();
+			var requests = _dbContext.Requests
+				.Include(r => r.CreatedByNavigation)
+				.AsQueryable();
 			if (!string.IsNullOrWhiteSpace(status)) requests = requests.Where(r => r.Status == status);
 			return requests.OrderByDescending(r => r.CreatedDate).ToListAsync();
 		}
@@ -45,6 +47,7 @@ namespace InfrastructureRequestApp.Data.Services
 		public Task<Request?> GetByIdAsync(Guid requestId)
 		{
 			return _dbContext.Requests
+				.Include(r => r.CreatedByNavigation)
 				.Include(r => r.RequestComments)
 				.ThenInclude(c => c.CommentedByUser)
 				.FirstOrDefaultAsync(r => r.RequestId == requestId);

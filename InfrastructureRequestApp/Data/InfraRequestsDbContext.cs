@@ -74,6 +74,8 @@ public partial class InfraRequestsDbContext : DbContext
             entity.Property(e => e.FullName)
                 .IsRequired()
                 .HasMaxLength(100);
+            entity.Property(e => e.Email).HasMaxLength(256);
+            entity.Property(e => e.MustResetPassword).HasDefaultValue(false);
             entity.Property(e => e.IsActive).HasDefaultValue(true);
             entity.Property(e => e.PasswordHash)
                 .IsRequired()

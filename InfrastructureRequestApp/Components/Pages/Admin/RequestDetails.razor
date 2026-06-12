@@ -23,6 +23,7 @@ else
                 <p><b>Status:</b> @req.Status</p>
             </div>
             <div>
+                <p><b>Requested By:</b> @(req.CreatedByNavigation?.FullName ?? "-")</p>
                 <p><b>Created:</b> @req.CreatedDate.ToLocalTime()</p>
                 <p><b>Assigned To:</b> @(assignedToName ?? "-")</p>
             </div>

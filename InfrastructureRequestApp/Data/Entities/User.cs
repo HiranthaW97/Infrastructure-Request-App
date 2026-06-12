@@ -12,9 +12,13 @@ public partial class User
 
     public string FullName { get; set; }
 
+    public string Email { get; set; }
+
     public string UserType { get; set; }
 
     public bool IsActive { get; set; }
+
+    public bool MustResetPassword { get; set; }
 
     public DateTime CreatedDate { get; set; }
 
