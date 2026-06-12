@@ -1,8 +1,9 @@
-﻿using InfrastructureRequestApp.Data.Entities;
-using InfrastructureRequestApp.Data.Services.Interfaces;
+﻿using InfrastructureRequestApp.Data;
+using InfrastructureRequestApp.Data.Entities;
+using InfrastructureRequestApp.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 
-namespace InfrastructureRequestApp.Data.Services
+namespace InfrastructureRequestApp.Services
 {
 	public class RequestService : IRequestService
 	{

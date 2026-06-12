@@ -1,7 +1,7 @@
 ﻿using System.Security.Cryptography;
 using System.Text;
 
-namespace InfrastructureRequestApp.Data.Services
+namespace InfrastructureRequestApp.Services
 {
 	public class PasswordHasher
 	{

@@ -1,11 +1,12 @@
-﻿using InfrastructureRequestApp.Data.Entities;
-using InfrastructureRequestApp.Data.Services.Interfaces;
+﻿using InfrastructureRequestApp.Data;
+using InfrastructureRequestApp.Data.Entities;
+using InfrastructureRequestApp.Services.Interfaces;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Security.Cryptography;
 using System.Text;
 
-namespace InfrastructureRequestApp.Data.Services
+namespace InfrastructureRequestApp.Services
 {
 	public class UserService : IUserService
 	{

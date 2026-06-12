@@ -1,4 +1,4 @@
-namespace InfrastructureRequestApp.Data.Services.Interfaces
+namespace InfrastructureRequestApp.Services.Interfaces
 {
     public interface IEmailService
     {

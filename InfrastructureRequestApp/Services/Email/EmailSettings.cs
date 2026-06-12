@@ -1,4 +1,4 @@
-namespace InfrastructureRequestApp.Data.Services.Email
+namespace InfrastructureRequestApp.Services.Email
 {
     /// <summary>
     /// SMTP configuration bound from the "Email" section of appsettings.json.

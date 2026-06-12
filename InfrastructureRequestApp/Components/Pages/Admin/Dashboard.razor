@@ -1,5 +1,5 @@
 @page "/admin"
-@using InfrastructureRequestApp.Data.Services.Interfaces
+@using InfrastructureRequestApp.Services.Interfaces
 @attribute [Authorize(Roles = Roles.Admin)]
 @inject IRequestService RequestsSvc
 @inject NavigationManager Nav

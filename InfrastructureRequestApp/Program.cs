@@ -1,9 +1,9 @@
 using InfrastructureRequestApp.Components;
 using InfrastructureRequestApp.Data;
-using InfrastructureRequestApp.Data.Services;
-using InfrastructureRequestApp.Data.Services.Email;
-using InfrastructureRequestApp.Data.Services.Interfaces;
 using InfrastructureRequestApp.Security;
+using InfrastructureRequestApp.Services;
+using InfrastructureRequestApp.Services.Email;
+using InfrastructureRequestApp.Services.Interfaces;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Components.Authorization;

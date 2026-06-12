@@ -1,9 +1,9 @@
 using System.Net;
 using System.Net.Mail;
-using InfrastructureRequestApp.Data.Services.Interfaces;
+using InfrastructureRequestApp.Services.Interfaces;
 using Microsoft.Extensions.Options;
 
-namespace InfrastructureRequestApp.Data.Services.Email
+namespace InfrastructureRequestApp.Services.Email
 {
     /// <summary>
     /// Sends email over SMTP (e.g. Gmail). If no SMTP host/credentials are

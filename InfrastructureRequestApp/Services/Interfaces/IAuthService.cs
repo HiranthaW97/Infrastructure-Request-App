@@ -1,6 +1,6 @@
 ﻿using InfrastructureRequestApp.Data.Entities;
 
-namespace InfrastructureRequestApp.Data.Services.Interfaces
+namespace InfrastructureRequestApp.Services.Interfaces
 {
 	public interface IAuthService
 	{
